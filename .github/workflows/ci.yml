@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      - name: Test
+        run: dotnet test -c Release --no-build
+
+      - name: Publish web app
+        run: dotnet publish src/WebApp/WebApp.csproj -c Release --no-build -o out/webapp
+
+      - name: Publish integration
+        run: dotnet publish src/Integration/Integration.csproj -c Release --no-build -o out/integration
+
+      - name: Upload web app artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: webapp
+          path: out/webapp
+          if-no-files-found: error
+
+      - name: Upload integration artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: integration
+          path: out/integration
+          if-no-files-found: error
